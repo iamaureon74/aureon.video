@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>aureon · void</title>
+<link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+<style>
+@font-face { font-family: "URW Gothic"; src: url(/fonts/URWGothic-Book.otf); font-weight: 400; }
+@font-face { font-family: "URW Gothic"; src: url(/fonts/URWGothic-Demi.otf); font-weight: 600; }
+:root {
+  --void:#0b0a09; --ash:#16130f; --smoke:#2a241c; --bone:#ece6dc; --dust:#9a9083;
+  --ember:#c9a46a; --gold:#996515; --clear:#7fb89a; --signal:#e07f66;
+  --ease: cubic-bezier(.2,.8,.2,1);
+}
+* { box-sizing: border-box; }
+html, body { margin:0; height:100%; background:var(--void); color:var(--bone);
+  font: 400 15px/1.5 "URW Gothic", "Century Gothic", system-ui, sans-serif; }
+body { display:flex; flex-direction:column; min-height:100vh; }
+header { display:flex; align-items:center; gap:12px; padding:18px 24px; }
+header svg { width:22px; height:22px; }
+header b { font-weight:400; letter-spacing:.35em; font-size:15px; }
+header span { color:var(--dust); font-size:13px; margin-left:auto; }
+main { flex:1; display:grid; place-items:center; padding:16px 24px 40px; }
+.screen { width:min(760px,100%); display:none; }
+.screen.on { display:block; animation: rise .32s var(--ease); }
+@keyframes rise { from { opacity:0; transform:translateY(8px) } to { opacity:1; transform:none } }
+h1 { font-weight:400; letter-spacing:.25em; font-size:clamp(28px,5vw,48px); margin:0 0 4px; text-align:center; }
+.sub { color:var(--dust); text-align:center; margin:0 0 28px; }
+.mono { font-family: ui-monospace, "JetBrains Mono", Consolas, monospace; font-size:13px; }
+
+/* drop */
+#drop { position:relative; display:grid; place-items:center; height:min(56vh,440px);
+  border:1px dashed var(--smoke); border-radius:20px; cursor:pointer; outline:none;
+  transition: border-color .18s var(--ease), background .18s var(--ease); }
+#drop:hover, #drop:focus-visible, #drop.over { border-color:var(--ember); background:#120f0c; }
+.ring { width:132px; height:132px; transition: transform .18s var(--ease), filter .18s var(--ease); }
+#drop.over .ring, #drop:hover .ring { transform:scale(1.08); filter: drop-shadow(0 0 14px #c9a46a55); }
+.ring circle { fill:none; stroke-width:3; }
+.ring .track { stroke:var(--smoke); }
+.ring .arc { stroke:var(--ember); stroke-linecap:round; transform:rotate(-90deg); transform-origin:50% 50%;
+  transition: stroke-dashoffset .6s var(--ease); }
+.drop-text { position:absolute; bottom:28px; left:0; right:0; text-align:center; color:var(--dust); }
+.drop-text b { color:var(--bone); font-weight:400; }
+kbd { border:1px solid var(--smoke); border-radius:5px; padding:0 5px; font-size:12px; color:var(--bone); }
+.swallow { position:absolute; width:120px; height:68px; object-fit:cover; border-radius:8px;
+  animation: swallow .42s var(--ease) forwards; pointer-events:none; }
+@keyframes swallow { to { transform:scale(.05); opacity:0; } }
+
+/* lists */
+.panel { background:var(--ash); border:1px solid var(--smoke); border-radius:16px; padding:20px 22px; margin-bottom:16px; }
+.panel h2 { font-size:12px; font-weight:600; letter-spacing:.2em; text-transform:uppercase; color:var(--dust); margin:0 0 12px; }
+ul.find { list-style:none; padding:0; margin:0; }
+ul.find li { display:flex; gap:10px; align-items:baseline; padding:7px 0; border-bottom:1px solid #ffffff08;
+  animation: rise .22s var(--ease) both; }
+ul.find li:last-child { border:0; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--signal); flex:none; transform:translateY(-1px); }
+.dot.ok { background:var(--clear); }
+.k { color:var(--dust); flex:0 0 200px; overflow-wrap:anywhere; }
+.v { flex:1; min-width:0; overflow-wrap:anywhere; }
+li.gone .v, li.gone .k { text-decoration: line-through; text-decoration-color: var(--clear); color:#6f675d; }
+.total { font-size:20px; text-align:center; margin:6px 0 22px; }
+.total em { font-style:normal; color:var(--signal); }
+
+/* options */
+.opts { display:grid; gap:14px; }
+.row { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.row > label.t { min-width:150px; color:var(--dust); }
+.seg { display:inline-flex; border:1px solid var(--smoke); border-radius:12px; overflow:hidden; }
+.seg input { position:absolute; opacity:0; pointer-events:none; }
+.seg label { padding:10px 14px; min-height:44px; display:flex; align-items:center; cursor:pointer; color:var(--dust); }
+.seg input:checked + label { background:var(--smoke); color:var(--bone); }
+.seg input:focus-visible + label { outline:2px solid var(--ember); outline-offset:-2px; }
+.swatch { width:14px; height:14px; border-radius:4px; display:inline-block; margin-right:8px; background:var(--gold); }
+.hint { color:var(--dust); font-size:13px; }
+button { font:inherit; border:0; border-radius:14px; min-height:48px; padding:0 26px; cursor:pointer; }
+.primary { background:var(--ember); color:#1a140c; font-weight:600; letter-spacing:.06em; }
+.primary:hover { filter:brightness(1.08); }
+.ghost { background:transparent; color:var(--bone); border:1px solid var(--smoke); }
+.actions { display:flex; gap:12px; justify-content:center; margin-top:22px; flex-wrap:wrap; }
+button:focus-visible, a:focus-visible { outline:2px solid var(--ember); outline-offset:3px; }
+a.primary { display:inline-flex; align-items:center; text-decoration:none; border-radius:14px; min-height:48px; padding:0 26px; }
+
+/* process */
+.proc { display:grid; place-items:center; gap:22px; }
+.stages { list-style:none; padding:0; margin:0; display:grid; gap:8px; min-width:260px; }
+.stages li { color:#5f584f; display:flex; gap:10px; align-items:center; transition: color .2s; }
+.stages li.now { color:var(--bone); }
+.stages li.now::before { content:""; width:8px; height:8px; border-radius:50%; background:var(--ember); animation: pulse 1.2s infinite; }
+.stages li.did { color:var(--clear); }
+.stages li.did::before { content:"✓"; font-size:12px; }
+.stages li.skip { display:none; }
+@keyframes pulse { 50% { opacity:.3 } }
+video { width:100%; border-radius:14px; background:#000; display:block; }
+.checks li .v { color:var(--bone); }
+.err { color:var(--signal); white-space:pre-wrap; }
+.note { color:var(--dust); font-size:13px; margin-top:10px; }
+@media (prefers-reduced-motion: reduce) { *, *::before { animation:none !important; transition:none !important; } }
+@media (max-width:560px) { .k { flex-basis:120px; } .row > label.t { min-width:100%; } }
+</style>
+</head>
+<body>
+<header>
+  <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M47.6 20.8A19 19 0 1 1 41 15.4" fill="none" stroke="#c9a46a" stroke-width="5" stroke-linecap="round"/></svg>
+  <b>void</b><span>runs on this computer · nothing is uploaded anywhere</span>
+</header>
+<main>
+  <!-- 1 drop -->
+  <section class="screen on" id="s-drop" aria-label="add a video">
+    <h1>void</h1>
+    <p class="sub">a little less noise. a little more possibility.</p>
+    <div id="drop" tabindex="0" role="button" aria-label="add a video: drop, click to browse, or paste">
+      <svg class="ring" viewBox="0 0 132 132" aria-hidden="true">
+        <circle class="track" cx="66" cy="66" r="60"/>
+        <circle class="arc" cx="66" cy="66" r="60" stroke-dasharray="377" stroke-dashoffset="330"/>
+      </svg>
+      <div class="drop-text"><b>drop a video into the void</b><br>click to browse · or paste with <kbd>ctrl</kbd>+<kbd>v</kbd></div>
+    </div>
+    <input id="file" type="file" accept="video/*,.mkv,.mov,.m4v,.webm" hidden>
+    <p class="err" id="drop-err" role="alert"></p>
+  </section>
+
+  <!-- 2 scan -->
+  <section class="screen" id="s-scan" aria-live="polite">
+    <p class="total" id="total">reading the file…</p>
+    <div class="panel"><h2>found</h2><ul class="find" id="found"></ul></div>
+    <div class="panel opts" id="opts" hidden>
+      <h2>choose</h2>
+      <div class="row"><label class="t">audio protection</label>
+        <span class="seg">
+          <input type="radio" name="audio" id="a1" value="standard" checked><label for="a1">standard</label>
+          <input type="radio" name="audio" id="a2" value="warp"><label for="a2">+ aircraft warp</label>
+          <input type="radio" name="audio" id="a3" value="voice"><label for="a3">voice only</label>
+        </span></div>
+      <div class="row"><label class="t">transcript</label>
+        <span class="seg">
+          <input type="radio" name="ov" id="o1" value="1" checked><label for="o1">on</label>
+          <input type="radio" name="ov" id="o2" value="0"><label for="o2">off</label>
+        </span></div>
+      <div class="row"><label class="t">text colour</label>
+        <span class="seg">
+          <input type="radio" name="color" id="c1" value="golden-brown" checked><label for="c1"><span class="swatch"></span>golden brown</label>
+          <input type="radio" name="color" id="c2" value="auto"><label for="c2">match scene</label>
+        </span></div>
+      <div class="row"><label class="t">made for</label>
+        <span class="seg">
+          <input type="radio" name="plat" id="p1" value="auto" checked><label for="p1">auto</label>
+          <input type="radio" name="plat" id="p2" value="tiktok"><label for="p2">tiktok</label>
+          <input type="radio" name="plat" id="p3" value="reels"><label for="p3">reels</label>
+          <input type="radio" name="plat" id="p4" value="shorts"><label for="p4">shorts</label>
+          <input type="radio" name="plat" id="p5" value="youtube"><label for="p5">youtube</label>
+        </span></div>
+      <p class="hint" id="size-hint"></p>
+      <div class="actions"><button class="ghost" data-reset>pick another</button><button class="primary" id="go">clean this video</button></div>
+    </div>
+  </section>
+
+  <!-- 3 process -->
+  <section class="screen" id="s-proc" aria-live="polite">
+    <div class="proc">
+      <svg class="ring" viewBox="0 0 132 132" aria-hidden="true">
+        <circle class="track" cx="66" cy="66" r="60"/>
+        <circle class="arc" id="parc" cx="66" cy="66" r="60" stroke-dasharray="377" stroke-dashoffset="377"/>
+      </svg>
+      <ol class="stages" id="stages"></ol>
+    </div>
+  </section>
+
+  <!-- 4 proof -->
+  <section class="screen" id="s-done">
+    <p class="total" id="done-title"></p>
+    <div class="panel"><video id="out" controls playsinline></video></div>
+    <div class="panel"><h2>removed</h2><ul class="find" id="removed"></ul></div>
+    <div class="panel"><h2>re-checked the output</h2><ul class="find checks" id="checks"></ul>
+      <p class="note">sensor noise fingerprint (prnu) is weakened, not guaranteed removed. what is visible in the picture — houses, signs, skyline — is not changed.</p></div>
+    <div class="actions"><a class="primary" id="save" href="#">save video</a><a class="ghost primary" style="background:transparent;color:var(--bone);border:1px solid var(--smoke)" id="save-report" href="#">save report</a><button class="ghost" data-reset>process another</button></div>
+  </section>
+
+  <section class="screen" id="s-err"><div class="panel"><h2>something went wrong</h2><p class="err" id="err"></p>
+    <div class="actions"><button class="ghost" data-reset>start over</button></div></div></section>
+</main>
+<script>
+"use strict";
+const TOKEN = "__AUREON_TOKEN__";
+const $ = s => document.querySelector(s);
+const OK_EXT = /\.(mp4|mov|m4v|mkv|webm|avi)$/i;
+let job = null, poll = null;
+
+function show(id) { document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id)); }
+function api(path, opts = {}) {
+  return fetch(path, { ...opts, headers: { "X-Aureon-Token": TOKEN, ...(opts.headers || {}) } })
+    .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j; });
+}
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function item(k, v, cls = "") { const li = el("li", cls); li.append(el("span", "dot" + (cls.includes("ok") ? " ok" : "")), el("span", "k", k), el("span", "v", v)); return li; }
+
+// ---------------------------------------------------------------- input: drop, click, paste
+const drop = $("#drop"), file = $("#file");
+drop.addEventListener("click", () => file.click());
+drop.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); file.click(); } });
+file.addEventListener("change", () => file.files[0] && take(file.files[0]));
+["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", e => { const f = e.dataTransfer.files[0]; if (f) take(f, e); });
+window.addEventListener("dragover", e => e.preventDefault());
+window.addEventListener("drop", e => e.preventDefault());
+window.addEventListener("paste", e => {
+  if (!$("#s-drop").classList.contains("on")) return;
+  const f = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith("video/") || OK_EXT.test(f.name));
+  if (f) take(f); else $("#drop-err").textContent = "the clipboard has no video file in it. copy the file itself (not a link) and paste again.";
+});
+document.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key === "o") { e.preventDefault(); file.click(); } });
+document.querySelectorAll("[data-reset]").forEach(b => b.addEventListener("click", reset));
+
+function reset() { clearInterval(poll); job = null; file.value = ""; $("#drop-err").textContent = ""; show("s-drop"); }
+
+async function take(f, ev) {
+  $("#drop-err").textContent = "";
+  if (!(f.type.startsWith("video/") || OK_EXT.test(f.name))) { $("#drop-err").textContent = `“${f.name}” is not a video file.`; return; }
+  swallow(f, ev);
+  const name = OK_EXT.test(f.name) ? f.name : "clip." + (f.type.split("/")[1] || "mp4");
+  try {
+    await new Promise(r => setTimeout(r, 380));
+    $("#found").replaceChildren(); $("#opts").hidden = true; $("#total").textContent = "reading the file…"; show("s-scan");
+    const r = await api("/api/upload?name=" + encodeURIComponent(name), { method: "POST", body: f });
+    job = r.id; poll = setInterval(tick, 400);
+  } catch (e) { fail(e.message); }
+}
+function swallow(f, ev) {
+  const url = URL.createObjectURL(f), v = document.createElement("video");
+  v.src = url; v.muted = true; v.className = "swallow";
+  const r = drop.getBoundingClientRect();
+  v.style.left = (ev ? ev.clientX - r.left - 60 : r.width / 2 - 60) + "px";
+  v.style.top = (ev ? ev.clientY - r.top - 34 : r.height / 2 - 34) + "px";
+  drop.append(v); setTimeout(() => { v.remove(); URL.revokeObjectURL(url); }, 500);
+}
+
+// ---------------------------------------------------------------- state polling
+let shownFindings = 0;
+async function tick() {
+  let j; try { j = await api("/api/job/" + job); } catch (e) { return fail(e.message); }
+  if (j.state === "error") return fail(j.error);
+  if (j.state === "scanned" && !$("#s-proc").classList.contains("on")) { clearInterval(poll); renderScan(j.scan); }
+  if (j.state === "processing") renderProc(j);
+  if (j.state === "done") { clearInterval(poll); renderDone(j.report); }
+}
+function findings(s) {
+  const out = s.metadata.map(f => [f.key, f.value]);
+  const a = s.audio || {};
+  if (a.enf?.detected) out.push(["mains hum", `${a.enf.grid_hz} hz · ${a.enf.snr_db} db above floor`]);
+  if (a.ultrasonic?.detected) out.push(["ultrasonic tone", `${a.ultrasonic.peak_hz} hz`]);
+  (a.aircraft || []).forEach(e => out.push(["aircraft fly-over", `${e.t0} s · ~${e.speed_ms} m/s · closest ~${e.distance_m} m · ${e.tones.length} tone(s)`]));
+  return out;
+}
+function renderScan(s) {
+  const list = $("#found"), f = findings(s);
+  list.replaceChildren();
+  f.forEach(([k, v], i) => { const li = item(k, v); li.style.animationDelay = (i * 40) + "ms"; list.append(li); });
+  if (!f.length) list.append(item("nothing found", "this file already looks clean", "ok"));
+  $("#total").innerHTML = f.length ? `<em>${f.length}</em> thing${f.length === 1 ? "" : "s"} could identify this video.` : "nothing identifying found.";
+  if (s.video) {
+    const { width: w, height: h } = s.video, r = w / h;
+    const kind = r <= 0.66 ? "vertical 9:16 — text kept clear of tiktok / reels / shorts buttons"
+      : r < 0.9 ? "4:5 portrait (instagram feed)" : r < 1.15 ? "square" : "landscape (youtube)";
+    $("#size-hint").textContent = `${w}×${h} · ${kind}`;
+  }
+  $("#opts").hidden = false; $("#go").focus();
+}
+$("#go").addEventListener("click", async () => {
+  const pick = n => document.querySelector(`input[name=${n}]:checked`).value;
+  const body = { audio: pick("audio"), overlay: pick("ov") === "1", color: pick("color"), platform: pick("plat") };
+  try {
+    await api(`/api/job/${job}/clean`, { method: "POST", body: JSON.stringify(body), headers: { "Content-Type": "application/json" } });
+    $("#stages").replaceChildren(); show("s-proc"); poll = setInterval(tick, 400);
+  } catch (e) { fail(e.message); }
+});
+function renderProc(j) {
+  const ol = $("#stages");
+  if (!ol.children.length) j.stages.forEach(s => ol.append(el("li", "", s)));
+  [...ol.children].forEach(li => {
+    const s = li.textContent;
+    li.className = j.done_stages.includes(s) ? "did" : j.stage === s ? "now" : "";
+  });
+  // the ring fills by finished stages only — never an invented percentage
+  const frac = j.done_stages.length / j.stages.length;
+  $("#parc").style.strokeDashoffset = 377 * (1 - frac);
+}
+function renderDone(r) {
+  $("#parc").style.strokeDashoffset = 0;
+  const t = `?t=${encodeURIComponent(TOKEN)}`;
+  $("#out").src = `/api/job/${job}/video${t}`;
+  $("#save").href = `/api/job/${job}/video${t}&dl=1`;
+  $("#save").setAttribute("download", r.output);
+  $("#save-report").href = `/api/job/${job}/report${t}`;
+  const passed = r.checks.every(c => c.pass);
+  $("#done-title").textContent = passed ? "clean. every check passed." : "done — but some checks need attention.";
+  const rem = $("#removed"); rem.replaceChildren();
+  findings(r.before).forEach(([k, v], i) => {
+    const li = item(k, v, "gone ok"); li.style.animationDelay = (i * 30) + "ms"; rem.append(li);
+  });
+  const ch = $("#checks"); ch.replaceChildren();
+  r.checks.forEach(c => ch.append(item(c.pass ? "pass" : "fail", c.check, c.pass ? "ok" : "")));
+  setTimeout(() => show("s-done"), 450);
+}
+function fail(msg) { clearInterval(poll); $("#err").textContent = msg; show("s-err"); }
+</script>
+</body>
+</html>

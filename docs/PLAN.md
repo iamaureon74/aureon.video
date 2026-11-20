@@ -1,5 +1,18 @@
 # aureon.video — plan v0.1
 
+> **status (v0.1 engine built):** sections 1–5 are implemented in `engine/` and covered by
+> tests, with these changes from the plan:
+> - transcript colour defaults to golden brown (`#996515`)
+> - vertical video keeps clear of the tiktok / reels / shorts buttons
+> - mode c ("voice only") uses classical vad gating + band-pass, not demucs
+> - word alignment uses faster-whisper's built-in word timestamps, not a separate wav2vec2
+>   aligner
+> - the "random time-stretch" for enf was dropped: it would break a/v sync, and the deeper
+>   notch comb made it unnecessary
+>
+> `doppler-locate` integration is not done yet; the engine re-runs its own doppler
+> detector on the output instead.
+
 pipeline: upload → probe → transcribe (local) → clean audio → strip + re-encode → render transcript overlay → verify → download.
 
 ## 1. metadata + fingerprint stripping
