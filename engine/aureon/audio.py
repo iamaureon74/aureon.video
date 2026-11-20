@@ -82,7 +82,18 @@ def detect_ultrasonic(x: np.ndarray, sr: int) -> dict:
     best, bf = -99.0, 0.0
     idx = np.where(band)[0]
     pk, props = signal.find_peaks(pdb[idx], prominence=0, wlen=81)
-    for p_, pr in zip(pk, props["prominences"]):
+    if len(pk):
+        widths = signal.peak_widths(pdb[idx], pk, rel_height=0.5,
+                                    prominence_data=(props["prominences"], props["left_bases"],
+                                                     props["right_bases"]))[0]
+    else:
+        widths = []
+    df = f[1] - f[0]
+    for p_, pr, w in zip(pk, props["prominences"], widths):
+        # a beacon is a pure tone: a few hz wide. a filter / codec roll-off edge is a
+        # broad shelf and must not count.
+        if w * df > 40.0:
+            continue
         if pr > best:
             best, bf = float(pr), float(f[idx[p_]])
     speech = (f >= 300) & (f <= 4000)

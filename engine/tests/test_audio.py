@@ -100,3 +100,14 @@ def test_clean_keeps_speech_band():
     y, _ = A.clean(x, SR, hits=[])
     ratio = np.sqrt(np.mean(y[SR:-SR] ** 2) / np.mean(x[SR:-SR] ** 2))
     assert ratio > 0.8
+
+
+def test_ultrasonic_ignores_codec_rolloff_but_finds_weak_beacon():
+    from scipy import signal as sg
+    rng = np.random.default_rng(8)
+    x = 0.01 * rng.standard_normal(10 * SR)
+    x = sg.sosfilt(sg.butter(16, 17200, "lowpass", fs=SR, output="sos"), x)
+    assert not A.detect_ultrasonic(x[:, None], SR)["detected"]       # shelf, no tone
+    t = np.arange(10 * SR) / SR
+    y = x + 0.001 * np.sin(2 * np.pi * 19500 * t)
+    assert A.detect_ultrasonic(y[:, None], SR)["detected"]           # real beacon
