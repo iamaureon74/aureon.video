@@ -81,20 +81,30 @@ jobs:
           path: engine/dist/aureon-windows-x64.zip
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v')
+    # github creates the tag server-side; a build on main publishes (or refreshes) the
+    # release for the version in engine/pyproject.toml
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v5
         with:
           name: aureon-windows-x64
+          path: out
       - name: publish release
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$TAG" aureon-windows-x64.zip \
-            --repo "$GITHUB_REPOSITORY" --title "aureon $TAG (windows)" \
-            --notes "windows x64, portable. unzip, open the aureon folder, double-click aureon.exe. the transcription model (~800 mb) downloads on first use. not code-signed yet: windows smartscreen will warn — choose 'more info' → 'run anyway'."
+          VERSION=$(grep -m1 '^version' engine/pyproject.toml | cut -d'"' -f2)
+          TAG="v$VERSION"
+          NOTES="windows x64, portable. unzip, open the aureon folder, double-click aureon.exe — it opens in your browser and runs only on your computer. the transcription model (~800 mb) downloads on first use. not code-signed yet: if windows smartscreen warns, choose 'more info' then 'run anyway'. built from ${GITHUB_SHA::7}."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" out/aureon-windows-x64.zip --clobber
+            gh release edit "$TAG" --notes "$NOTES"
+          else
+            gh release create "$TAG" out/aureon-windows-x64.zip --target "$GITHUB_SHA" \
+              --title "aureon $TAG (windows)" --notes "$NOTES" --latest
+          fi
