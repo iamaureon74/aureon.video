@@ -1,10 +1,16 @@
+<p align="center">
+  <a href="https://github.com/iamaureon74/aureon.video/releases/latest/download/aureon-windows-x64.zip">
+    <img alt="download for windows" src="https://img.shields.io/badge/%E2%AC%87%20download%20for%20windows-.zip%20%C2%B7%20v0.1.0-996515?style=for-the-badge&labelColor=0b0a09" height="56">
+  </a>
+</p>
+
+<p align="center"><a href="https://github.com/iamaureon74/aureon.video/releases/latest/download/aureon-windows-x64.zip"><b>⬇ click here to download aureon for windows</b></a></p>
+
 # aureon.video — void
 
 *a little less noise. a little more possibility.*
 
-## ⬇ download for windows
-
-### **[click here to download aureon for windows (.zip)](https://github.com/iamaureon74/aureon.video/releases/latest/download/aureon-windows-x64.zip)**
+## how to install on windows
 
 1. unzip it
 2. open the `aureon` folder and double-click **`aureon.exe`**
