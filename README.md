@@ -2,6 +2,19 @@
 
 *a little less noise. a little more possibility.*
 
+## ⬇ download for windows
+
+### **[click here to download aureon for windows (.zip)](https://github.com/iamaureon74/aureon.video/releases/latest/download/aureon-windows-x64.zip)**
+
+1. unzip it
+2. open the `aureon` folder and double-click **`aureon.exe`**
+3. the app opens in your browser. drop a video in, click to browse, or paste it with ctrl+v
+
+if windows says "windows protected your pc": click **more info → run anyway**. the app
+isn't code-signed yet. the transcription model (~800 mb) downloads the first time you use it.
+
+[all releases](https://github.com/iamaureon74/aureon.video/releases)
+
 drop in a video. aureon removes what could identify where, when and on what it was
 recorded, adds a synced 3-row transcript on the right side, then re-checks its own output
 and shows you the proof. everything runs on your computer and nothing is uploaded.
