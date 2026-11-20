@@ -1,0 +1,15 @@
+aureon — void
+a little less noise. a little more possibility.
+
+1. double-click aureon.exe
+2. your browser opens the app (it runs only on this computer; nothing is uploaded)
+3. drop a video in, click to browse, or paste it with ctrl+v
+
+first run: the transcription model (~800 mb) downloads once. after that it works offline.
+
+windows may say "windows protected your pc" because the app is not code-signed yet.
+click "more info" -> "run anyway".
+
+command line (optional), from this folder:
+  aureon.exe scan  video.mov
+  aureon.exe clean video.mov -o out

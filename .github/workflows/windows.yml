@@ -3,6 +3,7 @@ name: windows build
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 
@@ -17,9 +18,9 @@ jobs:
         shell: pwsh
         working-directory: engine
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -34,7 +35,8 @@ jobs:
       - name: install
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[test]" pyinstaller
+          # regular (non-editable) install so pyinstaller can see the package
+          pip install ".[test]" pyinstaller
 
       - name: unit tests
         run: python -m pytest -q
@@ -42,10 +44,13 @@ jobs:
       - name: package
         run: |
           pyinstaller --noconfirm --onedir --name aureon `
+            --paths . --collect-submodules aureon `
             --collect-data aureon --collect-data faster_whisper `
-            --collect-binaries ctranslate2 --icon NONE `
+            --collect-binaries ctranslate2 `
             packaging/aureon_entry.py
           Copy-Item "$env:FFBIN\ffmpeg.exe","$env:FFBIN\ffprobe.exe" dist/aureon/
+          Copy-Item ../README.md dist/aureon/README.md
+          Copy-Item packaging/START-HERE.txt dist/aureon/START-HERE.txt
 
       - name: smoke test the packaged exe (strip + audio, no model download)
         run: |
@@ -55,7 +60,29 @@ jobs:
           ./dist/aureon/aureon.exe clean "$env:RUNNER_TEMP\smoke.mov" -o "$env:RUNNER_TEMP\out" --no-overlay
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
-      - uses: actions/upload-artifact@v4
+      - name: zip
+        run: Compress-Archive -Path dist/aureon -DestinationPath dist/aureon-windows-x64.zip
+
+      - uses: actions/upload-artifact@v5
         with:
           name: aureon-windows-x64
-          path: engine/dist/aureon
+          path: engine/dist/aureon-windows-x64.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: aureon-windows-x64
+      - name: publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" aureon-windows-x64.zip \
+            --repo "$GITHUB_REPOSITORY" --title "aureon $TAG (windows)" \
+            --notes "windows x64, portable. unzip, open the aureon folder, double-click aureon.exe. the transcription model (~800 mb) downloads on first use. not code-signed yet: windows smartscreen will warn — choose 'more info' → 'run anyway'."
