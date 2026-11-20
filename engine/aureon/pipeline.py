@@ -216,7 +216,8 @@ def _blank_compressor_name(path: Path) -> None:
 
 def _run_in(args, cwd):
     import subprocess
-    p = subprocess.run(args, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+    p = subprocess.run(args, cwd=cwd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                       **ff.quiet())
     if p.returncode:
         raise ff.ToolError(p.stderr.decode("utf-8", "replace")[-2000:])
 

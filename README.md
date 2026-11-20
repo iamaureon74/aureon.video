@@ -1,25 +1,32 @@
 <p align="center">
-  <a href="https://github.com/iamaureon74/aureon.video/releases/latest/download/aureon-windows-x64.zip">
-    <img alt="download for windows" src="https://img.shields.io/badge/%E2%AC%87%20download%20for%20windows-.zip%20%C2%B7%20v0.1.0-996515?style=for-the-badge&labelColor=0b0a09" height="56">
+  <a href="https://github.com/iamaureon74/aureon.video/releases/latest/download/aureon-setup.exe">
+    <img alt="download for windows" src="https://img.shields.io/badge/%E2%AC%87%20download%20for%20windows-aureon--setup.exe-996515?style=for-the-badge&labelColor=0b0a09" height="56">
   </a>
 </p>
 
-<p align="center"><a href="https://github.com/iamaureon74/aureon.video/releases/latest/download/aureon-windows-x64.zip"><b>⬇ click here to download aureon for windows</b></a></p>
+<p align="center"><a href="https://github.com/iamaureon74/aureon.video/releases/latest/download/aureon-setup.exe"><b>⬇ click here to download aureon for windows</b></a><br>
+download → double-click → it opens. no unzipping, no setup questions, no admin password.</p>
 
 # aureon.video — void
 
 *a little less noise. a little more possibility.*
 
-## how to install on windows
+## windows
 
-1. unzip it
-2. open the `aureon` folder and double-click **`aureon.exe`**
-3. the app opens in your browser. drop a video in, click to browse, or paste it with ctrl+v
+1. click the download button above
+2. double-click **`aureon-setup.exe`**. aureon installs in a few seconds and opens in
+   your browser by itself
+3. drop a video in, click to browse, or paste it with ctrl+v
 
-if windows says "windows protected your pc": click **more info → run anyway**. the app
-isn't code-signed yet. the transcription model (~800 mb) downloads the first time you use it.
+after that, open it any time from the **start menu** or the **desktop shortcut**. it closes
+itself a couple of minutes after you close its browser tab. uninstall it from windows
+settings → apps.
 
-[all releases](https://github.com/iamaureon74/aureon.video/releases)
+- **smartscreen warning:** if windows says "windows protected your pc", click **more info → run anyway**.
+  the app isn't code-signed yet.
+- **first transcription:** the speech model (~800 mb) downloads once.
+
+[all releases](https://github.com/iamaureon74/aureon.video/releases) · [portable .zip (no install)](https://github.com/iamaureon74/aureon.video/releases/latest/download/aureon-windows-x64.zip)
 
 drop in a video. aureon removes what could identify where, when and on what it was
 recorded, adds a synced 3-row transcript on the right side, then re-checks its own output
@@ -93,7 +100,7 @@ aureon clean my_video.mov -o out/ --audio voice --platform tiktok --color auto
 every run writes `void_xxxxxxxx.mp4` plus a `.report.md` and a `.report.json` listing what
 was found, what was removed and each check's pass/fail.
 
-## windows
+## how the windows build is made
 
 `.github/workflows/windows.yml` builds a portable windows app on every push to `main`:
 - runs the unit tests on windows

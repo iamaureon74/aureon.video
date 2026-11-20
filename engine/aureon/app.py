@@ -50,6 +50,10 @@ class App:
         self.root = Path(tempfile.mkdtemp(prefix="aureon-app-"))
         self.jobs: dict[str, Job] = {}
         self.lock = threading.Lock()
+        self.last_ping: float | None = None   # set by the open browser tab
+
+    def busy(self) -> bool:
+        return any(j.state in ("scanning", "processing") for j in self.jobs.values())
 
     def new_job(self, ext):
         with self.lock:
@@ -216,6 +220,10 @@ def make_handler(app: App, port_ref: list[int]):
                 return self._json({"error": "forbidden"}, 403)
             u = urlparse(self.path)
             parts = [p for p in u.path.split("/") if p]
+            if parts == ["api", "ping"]:
+                import time as _t
+                app.last_ping = _t.monotonic()
+                return self._json({"ok": True})
             if parts == ["api", "upload"]:
                 name = parse_qs(u.query).get("name", ["video.mp4"])[0]
                 ext = Path(name).suffix.lower()
@@ -260,13 +268,39 @@ def make_handler(app: App, port_ref: list[int]):
     return H
 
 
-def serve(port: int = 0, open_browser: bool = True):
+IDLE_QUIT_S = 150  # browsers may slow a background tab's timers to ~1/min
+
+
+def serve(port: int = 0, open_browser: bool = True, idle_quit: bool = True):
+    """run the local interface. with idle_quit, the app exits by itself a little while
+    after its browser tab is closed (no ping) and no video is being processed, so the
+    windows build needs no console window to quit from."""
+    import time
+
     app = App()
     port_ref = [0]
     httpd = ThreadingHTTPServer(("127.0.0.1", port), make_handler(app, port_ref))
     port_ref[0] = httpd.server_address[1]
     url = f"http://127.0.0.1:{port_ref[0]}/"
     print(f"aureon is running at {url}  (ctrl+c to quit)")
+
+    def watchdog():
+        started = time.monotonic()
+        while True:
+            time.sleep(5)
+            last = app.last_ping
+            if app.busy():
+                continue
+            if last is None:
+                # browser never connected (blocked or closed instantly): give it 5 min
+                if time.monotonic() - started > 300:
+                    break
+            elif time.monotonic() - last > IDLE_QUIT_S:
+                break
+        httpd.shutdown()
+
+    if idle_quit:
+        threading.Thread(target=watchdog, daemon=True).start()
     if open_browser:
         webbrowser.open(url)
     try:

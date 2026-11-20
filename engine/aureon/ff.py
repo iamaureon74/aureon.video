@@ -14,6 +14,15 @@ class ToolError(RuntimeError):
     pass
 
 
+def quiet() -> dict:
+    """subprocess options for a windowed (no-console) windows app: no flashing console
+    windows for ffmpeg, and no inherited (invalid) stdin handle."""
+    kw = {"stdin": subprocess.DEVNULL}
+    if os.name == "nt":
+        kw["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+    return kw
+
+
 def _bundled(name: str) -> str | None:
     """ffmpeg/ffprobe shipped next to the packaged app (windows build)."""
     import sys
@@ -43,11 +52,15 @@ def has_tool(name: str) -> bool:
 
 def run(args: list[str], *, input: bytes | None = None, capture: bool = True) -> bytes:
     """run a command given as an argument list (never through a shell)."""
+    kw = quiet()
+    if input is not None:
+        kw.pop("stdin")
     proc = subprocess.run(
         args,
         input=input,
         stdout=subprocess.PIPE if capture else subprocess.DEVNULL,
         stderr=subprocess.PIPE,
+        **kw,
     )
     if proc.returncode != 0:
         err = proc.stderr.decode("utf-8", "replace")[-2000:]
@@ -112,7 +125,7 @@ def read_frames(path: str | Path, fps: float, width: int):
         [tool("ffmpeg"), "-v", "error", "-nostdin", "-i", str(path), "-map", "0:v:0",
          "-vf", f"fps={fps},scale={width}:{height}:flags=area",
          "-f", "rawvideo", "-pix_fmt", "rgb24", "pipe:1"],
-        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+        stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, **quiet(),
     )
     size = width * height * 3
     i = 0

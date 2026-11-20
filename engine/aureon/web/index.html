@@ -102,7 +102,7 @@ video { width:100%; border-radius:14px; background:#000; display:block; }
 <body>
 <header>
   <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M47.6 20.8A19 19 0 1 1 41 15.4" fill="none" stroke="#c9a46a" stroke-width="5" stroke-linecap="round"/></svg>
-  <b>void</b><span>runs on this computer · nothing is uploaded anywhere</span>
+  <b>void</b><span>runs on this computer · nothing is uploaded anywhere · closes itself when you close this tab</span>
 </header>
 <main>
   <!-- 1 drop -->
@@ -185,6 +185,9 @@ const TOKEN = "__AUREON_TOKEN__";
 const $ = s => document.querySelector(s);
 const OK_EXT = /\.(mp4|mov|m4v|mkv|webm|avi)$/i;
 let job = null, poll = null;
+// keep-alive: the app quits on its own a couple of minutes after this tab is closed
+const ping = () => fetch("/api/ping", { method: "POST", headers: { "X-Aureon-Token": TOKEN } }).catch(() => {});
+ping(); setInterval(ping, 15000);
 
 function show(id) { document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id)); }
 function api(path, opts = {}) {

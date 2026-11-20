@@ -55,7 +55,9 @@ jobs:
 
       - name: package
         run: |
-          pyinstaller --noconfirm --onedir --name aureon `
+          # windowed: double-clicking opens the browser ui with no console window
+          pyinstaller --noconfirm --onedir --windowed --name aureon `
+            --icon packaging/aureon.ico `
             --paths . --collect-submodules aureon `
             --collect-data aureon --collect-data faster_whisper `
             --collect-binaries ctranslate2 `
@@ -64,21 +66,39 @@ jobs:
           Copy-Item ../README.md dist/aureon/README.md
           Copy-Item packaging/START-HERE.txt dist/aureon/START-HERE.txt
 
-      - name: smoke test the packaged exe (strip + audio, no model download)
+      - name: one-click installer (inno setup)
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
+          $env:AUREON_VERSION = (Select-String -Path pyproject.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+          & $iscc packaging/aureon.iss
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-Item dist/aureon-setup.exe | Format-List Name, Length
+
+      - name: smoke test - install silently, then run the installed app
         run: |
           python packaging/smoke_fixture.py "$env:RUNNER_TEMP\smoke.mov"
-          ./dist/aureon/aureon.exe scan "$env:RUNNER_TEMP\smoke.mov"
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          ./dist/aureon/aureon.exe clean "$env:RUNNER_TEMP\smoke.mov" -o "$env:RUNNER_TEMP\out" --no-overlay
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $p = Start-Process dist/aureon-setup.exe -ArgumentList "/VERYSILENT","/SUPPRESSMSGBOXES","/NORESTART" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "installer exit $($p.ExitCode)" }
+          $exe = "$env:LOCALAPPDATA\Programs\aureon\aureon.exe"
+          if (-not (Test-Path $exe)) { throw "not installed at $exe" }
+          if (-not (Test-Path "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\aureon.lnk")) { throw "no start menu shortcut" }
+          # windowed exe: Start-Process -Wait to get a real exit code
+          $c = Start-Process $exe -ArgumentList "clean","$env:RUNNER_TEMP\smoke.mov","-o","$env:RUNNER_TEMP\out","--no-overlay" -Wait -PassThru
+          if ($c.ExitCode -ne 0) { throw "clean exit $($c.ExitCode)" }
+          $v = Get-ChildItem "$env:RUNNER_TEMP\out" -Filter "void_*.mp4"
+          if (-not $v) { throw "no cleaned video produced" }
+          Get-Content (Get-ChildItem "$env:RUNNER_TEMP\out" -Filter "*.report.md")[0].FullName -TotalCount 40
 
-      - name: zip
+      - name: zip (portable)
         run: Compress-Archive -Path dist/aureon -DestinationPath dist/aureon-windows-x64.zip
 
       - uses: actions/upload-artifact@v5
         with:
           name: aureon-windows-x64
-          path: engine/dist/aureon-windows-x64.zip
+          path: |
+            engine/dist/aureon-setup.exe
+            engine/dist/aureon-windows-x64.zip
 
   release:
     # github creates the tag server-side; a build on main publishes (or refreshes) the
@@ -100,11 +120,11 @@ jobs:
         run: |
           VERSION=$(grep -m1 '^version' engine/pyproject.toml | cut -d'"' -f2)
           TAG="v$VERSION"
-          NOTES="windows x64, portable. unzip, open the aureon folder, double-click aureon.exe — it opens in your browser and runs only on your computer. the transcription model (~800 mb) downloads on first use. not code-signed yet: if windows smartscreen warns, choose 'more info' then 'run anyway'. built from ${GITHUB_SHA::7}."
+          NOTES="download aureon-setup.exe and double-click it. it installs in seconds (no admin, no questions) and opens aureon in your browser; it runs only on your computer. start menu + desktop shortcuts are added. the transcription model (~800 mb) downloads on first use. not code-signed yet: if windows smartscreen warns, choose 'more info' then 'run anyway'. aureon-windows-x64.zip is the portable version. built from ${GITHUB_SHA::7}."
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" out/aureon-windows-x64.zip --clobber
+            gh release upload "$TAG" out/aureon-setup.exe out/aureon-windows-x64.zip --clobber
             gh release edit "$TAG" --notes "$NOTES"
           else
-            gh release create "$TAG" out/aureon-windows-x64.zip --target "$GITHUB_SHA" \
+            gh release create "$TAG" out/aureon-setup.exe out/aureon-windows-x64.zip --target "$GITHUB_SHA" \
               --title "aureon $TAG (windows)" --notes "$NOTES" --latest
           fi
