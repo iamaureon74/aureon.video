@@ -20,16 +20,38 @@ what is real:
 - **enf (electrical network frequency)**: mains hum at 50/60 hz plus harmonics. investigators match it against power-grid logs to work out when and where audio was recorded. it is well documented and the main real threat.
 - **ultrasonic beacons**: 18–22 khz tones used by ad trackers (e.g. silverpush) to link devices.
 - **infrasound / sub-bass** below about 20 hz.
-- **audible aircraft noise**: can in theory be matched against public ads-b flight logs.
+- **aircraft doppler geolocation** (demonstrated nov 2026; see 2a below).
 
-not supported by evidence: planes or satellites "beaming down" geolocation frequencies into recordings. the processing below covers the real versions of this concern anyway.
+clarification: planes and satellites don't transmit anything into recordings. a passing plane's engine sound is what gets recorded, and its doppler pattern can be matched against public flight-tracking data.
 
-filters:
+### 2a. aircraft doppler geolocation
+
+how it works:
+- **the doppler curve**: a passing plane's engine and propeller tones slide down in pitch as it flies over. this leaves an s-shaped curve in the audio's spectrogram.
+- **what the curve reveals**: its shape gives the plane's speed and its distance at the closest point. this is documented passive-acoustics science (b.g. ferguson, jasa 1992/1993).
+- **the matching step**: the curve is matched against public ads-b flight tracks (adsb.lol, opensky, flightradar24) to estimate where the recording was made.
+- **demonstrated results**: the youtuber colsto showed this in november 2026, reportedly to within about 100 m, sometimes from less than a minute of audio. the open-source tool `doppler-locate` reproduces it.
+- **weak points**: it needs the plane to appear in ads-b coverage. wind, city noise and different microphones haven't been tested much. it hasn't been peer-reviewed yet.
+- **reported survival**: the pattern reportedly survived high-pass filtering and phone compression, so the basic filters in section 2 do **not** defeat it.
+
+countermeasures (all classical dsp except mode c):
+- **detect**: track tonal ridges in the short-time fourier transform (stft) and flag narrowband tones whose frequency slides along a doppler-shaped curve. a match is defined as a tanh-like hyperbolic fit with residual below threshold. the ui shows these as "aircraft signatures found".
+- **mode a, tracking notch**: a notch filter follows each detected tone's instantaneous frequency, plus harmonics. this keeps the room ambience.
+- **mode b, warp**: a random, smooth time-warp of about ±3% and a pitch micro-modulation. this distorts the curve's shape and timing so it no longer fits real flight tracks. it is combined with mode a.
+- **mode c, voice-only**: isolate speech with source separation (demucs, an ai model run locally) and drop all background audio. this is the strongest option, but the ambience is lost.
+- **timestamps**: stripping the creation time (section 1) already widens the ads-b search window a lot.
+
+verification: run `doppler-locate` against the output as an automated red-team test. pass = no candidate location within 5 km.
+
+### 2b. filter chain
 1. high-pass at about 80 hz (removes infrasound and the 50/60 hz fundamental)
 2. adaptive notch comb at the detected enf frequency and its harmonics up to about 1 khz
-3. low-pass at about 16 khz (removes ultrasonic beacons)
-4. resample to 48 khz and add a small random time-stretch/dither so leftover enf traces no longer line up with grid logs
-5. before/after spectrogram in the report as proof
+3. aircraft tracking notch and warp (2a). in voice-only mode, speech isolation replaces this step.
+4. low-pass at about 16 khz (removes ultrasonic beacons)
+5. resample to 48 khz and add a small random time-stretch/dither so leftover enf traces no longer line up with grid logs
+6. before/after spectrogram in the report as proof
+
+sources: ferguson 1992 (jasa) via auditory.org/asamtgs/asa92nwo/1pEA/1pEA10.html; gizmodo, ibtimes, pasqualepillitteri.it and levelup.gitconnected.com coverage of the colsto demonstration (nov 2026).
 
 ## 3. transcription (local only)
 
