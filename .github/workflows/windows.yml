@@ -24,9 +24,21 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: ffmpeg (gyan.dev essentials, includes libass)
+      - name: ffmpeg (gpl build with libx264 + libass; github-hosted, gyan.dev fallback)
         run: |
-          Invoke-WebRequest https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip -OutFile ffmpeg.zip
+          $urls = @(
+            "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip",
+            "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+          )
+          $ok = $false
+          foreach ($u in $urls) {
+            for ($i = 1; $i -le 3 -and -not $ok; $i++) {
+              try { Invoke-WebRequest $u -OutFile ffmpeg.zip -ErrorAction Stop; $ok = $true }
+              catch { Write-Host "download failed ($u, try $i): $_"; Start-Sleep -Seconds (5 * $i) }
+            }
+            if ($ok) { break }
+          }
+          if (-not $ok) { throw "could not download ffmpeg" }
           Expand-Archive ffmpeg.zip -DestinationPath ffmpeg
           $bin = (Get-ChildItem ffmpeg -Recurse -Filter ffmpeg.exe | Select-Object -First 1).DirectoryName
           echo "FFBIN=$bin" >> $env:GITHUB_ENV
