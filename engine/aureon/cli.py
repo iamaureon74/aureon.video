@@ -12,7 +12,17 @@ import sys
 from . import __version__, pipeline
 
 
+def _utf8_console():
+    """windows consoles default to cp1252; never crash on a character it can't show."""
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, ValueError):
+            pass
+
+
 def main(argv=None):
+    _utf8_console()
     p = argparse.ArgumentParser(prog="aureon", description="a little less noise.")
     p.add_argument("--version", action="version", version=__version__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -33,7 +43,7 @@ def main(argv=None):
                    help="transcript colour: golden-brown (default), auto (match scene), #rrggbb")
     c.add_argument("--platform", default="auto",
                    choices=["auto", "none", "youtube", "tiktok", "reels", "shorts"],
-                   help="keep text clear of that app's buttons (auto: vertical video → shorts/tiktok/reels safe)")
+                   help="keep text clear of that app's buttons (auto: vertical video -> shorts/tiktok/reels safe)")
     c.add_argument("--no-prnu", action="store_true")
     c.add_argument("--keep-name", action="store_true")
     ap = sub.add_parser("app", help="open the drag-and-drop interface in your browser")
@@ -67,12 +77,12 @@ def main(argv=None):
         a.video, a.out, audio_mode=a.audio, overlay_on=not a.no_overlay, model=a.model,
         language=a.language, prnu=not a.no_prnu, keep_name=a.keep_name, lowercase=a.lowercase,
         text_color=a.color, platform=a.platform,
-        log=lambda m: print(f"· {m}", file=sys.stderr),
+        log=lambda m: print(f"- {m}", file=sys.stderr),
     )
     ok = all(c["pass"] for c in r["checks"])
     for c in r["checks"]:
         print(f"{'PASS' if c['pass'] else 'FAIL'}  {c['check']}")
-    print(f"\n→ {r['output']}  ({r['seconds']} s)")
+    print(f"\n-> {r['output']}  ({r['seconds']} s)")
     return 0 if ok else 2
 
 
